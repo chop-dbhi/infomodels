@@ -5,9 +5,9 @@ import "github.com/blang/semver"
 // SemVer components.
 const (
 	progMajor        = 0
-	progMinor        = 1
+	progMinor        = 2
 	progPatch        = 0
-	progReleaseLevel = "alpha"
+	progReleaseLevel = "final"
 )
 
 var (
