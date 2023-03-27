@@ -61,7 +61,8 @@ func init() {
 	RootCmd.PersistentFlags().StringP("dburi", "d", "", "Database URI to load the dataset into. Required by load, constrain.")
 	RootCmd.PersistentFlags().StringP("searchPath", "s", "", "SearchPath for the load (secondary schemas may be needed for adding constraints). Required by load, constrain.")
 	RootCmd.PersistentFlags().Bool("undo", false, "Undo the load; delete all tables.")
-
+	RootCmd.PersistentFlags().Bool("noidx", false, "No indexes; don't create indexes.")
+	RootCmd.PersistentFlags().Bool("nofk", false, "No FKs; don't create foreign keys.")
 	// Bind viper key names to the global flags.
 	viper.BindPFlag("service", RootCmd.PersistentFlags().Lookup("service"))
 	viper.BindPFlag("dmsaservice", RootCmd.PersistentFlags().Lookup("dmsaservice"))
@@ -74,19 +75,19 @@ func init() {
 	viper.BindPFlag("dburi", RootCmd.PersistentFlags().Lookup("dburi"))
 	viper.BindPFlag("searchPath", RootCmd.PersistentFlags().Lookup("searchPath"))
 	viper.BindPFlag("undo", RootCmd.PersistentFlags().Lookup("undo"))
-
-	// Set defaults in viper.
+	viper.BindPFlag("noidx", RootCmd.PersistentFlags().Lookup("noidx"))
+	viper.BindPFlag("nofk", RootCmd.PersistentFlags().Lookup("nofk"))
+	
+// Set defaults in viper.
 	viper.SetDefault("service", "https://data-models-service.research.chop.edu/")
 	viper.SetDefault("dmsaservice", "https://data-models-sqlalchemy.research.chop.edu/")
 	viper.SetDefault("loglvl", "INFO")
-	if !log.IsTerminal() {
-		// Default to json instead of logrus default text when no tty attached.
-		viper.SetDefault("logfmt", "json")
-	}
 
 	viper.SetDefault("dburi", "")
 	viper.SetDefault("searchPath", "")
 	viper.SetDefault("undo", false)
+	viper.SetDefault("noidx", false)
+	viper.SetDefault("nofk", false)
 
 	// Set up the dummy version flag. It will actually be handled in the
 	// main.main function, but we want it to show up in the help.

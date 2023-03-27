@@ -88,6 +88,11 @@ if the loaded tables have foreign keys into other schemas.
 			modelVersion = viper.GetString("modelv")
 		}
 
+		excludeTables := ""
+		if dataModel == "pcornet" {
+			 excludeTables = "dummy"
+		}
+
 		// Open the Database object using information from the DataDirectory
 		// object. Create tables and load data, then constraints and indexes.
 
@@ -105,8 +110,7 @@ if the loaded tables have foreign keys into other schemas.
 			"SearchPath":   viper.GetString("searchPath"),
 			"Service":      viper.GetString("service"),
 		}
-
-		db, err = database.Open(dataModel, modelVersion, viper.GetString("dburi"), viper.GetString("searchPath"), viper.GetString("dmsaservice"), "", "")
+		db, err = database.Open(dataModel, modelVersion, viper.GetString("dburi"), viper.GetString("searchPath"), viper.GetString("dmsaservice"), "", excludeTables)
 		if err != nil {
 			logFields["err"] = err.Error()
 			log.WithFields(logFields).Fatal("Database Open failed")
@@ -134,28 +138,31 @@ if the loaded tables have foreign keys into other schemas.
 			elapsed := time.Since(start)
 			logFields["durationMinutes"] = elapsed.Minutes()
 			log.WithFields(logFields).Info("Loaded. Beginning to add indexes.")
+                        if !viper.GetBool("noidx") {
+	         		indexesStart := time.Now()
+				err = db.CreateIndexes("strict")
+				if err != nil {
+					logFields["err"] = err.Error()
+					log.WithFields(logFields).Fatal("Error while adding indexes")
+				}	
 
-			indexesStart := time.Now()
-			err = db.CreateIndexes("strict")
-			if err != nil {
-				logFields["err"] = err.Error()
-				log.WithFields(logFields).Fatal("Error while adding indexes")
+				elapsed = time.Since(indexesStart)
+				logFields["durationMinutes"] = elapsed.Minutes()
+				log.WithFields(logFields).Info("Indexes added.")
 			}
+			if !viper.GetBool("nofk") {
+				constraintsStart := time.Now()
+				log.WithFields(logFields).Info("Beginning to add constraints.")
+				err = db.CreateConstraints("strict")
+				if err != nil {
+					logFields["err"] = err.Error()
+					log.WithFields(logFields).Fatal("Error while adding constraints")
+				}	
 
-			elapsed = time.Since(indexesStart)
-			logFields["durationMinutes"] = elapsed.Minutes()
-			log.WithFields(logFields).Info("Indexes added. Beginning to add constraints.")
-
-			constraintsStart := time.Now()
-			err = db.CreateConstraints("strict")
-			if err != nil {
-				logFields["err"] = err.Error()
-				log.WithFields(logFields).Fatal("Error while adding constraints")
+				elapsed = time.Since(constraintsStart)
+				logFields["durationMinutes"] = elapsed.Minutes()
+				log.WithFields(logFields).Info("Constraints added.")
 			}
-
-			elapsed = time.Since(constraintsStart)
-			logFields["durationMinutes"] = elapsed.Minutes()
-			log.WithFields(logFields).Info("Constraints added.")
 
 			elapsed = time.Since(start)
 			logFields["durationMinutes"] = elapsed.Minutes()
